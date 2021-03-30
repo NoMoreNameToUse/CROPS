@@ -1,3 +1,4 @@
+
 //Project minigarden V2
 //Based on arduino customkeypad Example
 //Boardtype Esp32 Doit Devkit v1
@@ -24,10 +25,10 @@ char hexaKeys[ROWS][COLS] = {
     {'4', '5', '6', '7'},
     {'8', '9', 'A', 'B'},
     {'C', 'D', 'E', 'F'}};
-//Define Keypad connection pins 
-byte rowPins[ROWS] = {13, 12, 14, 27}; 
+//Define Keypad connection pins
+byte rowPins[ROWS] = {13, 12, 14, 27};
 byte colPins[COLS] = {26, 25, 33, 32};
-//initialize an instance of class NewKeypad 
+//initialize an instance of class NewKeypad
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 /*********************Serial Connection**************************/
 #define RXD2 16
@@ -48,16 +49,17 @@ int webinput;
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 /******************************Endstop******************************/
-//current endstop state and initial state. Not the best implementation, but works for now 
+//current endstop state and initial state. Not the best implementation, but works for now
 bool endStopState[2];
 bool preEndStopState[2] = {HIGH, HIGH};
 //endstop and l298n driver connections
 int endStopPin[2] = {34, 35};
 int driverPin[4] = {23, 19, 18, 5};
-int pinState[6] = {LOW, LOW, LOW, LOW, LOW, LOW}; // the current state of driver pins  
-
+int pinState[6] = {LOW, LOW, LOW, LOW, LOW, LOW}; // the current state of driver pins
+int utilityState[2] = {LOW, LOW};
 int lastButtonState;    // the previous state of button
 int currentButtonState; // the current state of button
+
 /******************************Website******************************/
 const char index_html[] PROGMEM = R"=="rawliteral(
 <!DOCTYPE html>
@@ -243,334 +245,3 @@ const char index_html[] PROGMEM = R"=="rawliteral(
 </script>
 </html>
 )=="rawliteral";
-
-/******************************Setup******************************/
-void setup()
-{
-  Serial.begin(115200);
-  //Serial Connection to arduino nano on bridge 
-  Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
-  //pinmode definition
-  for (int i = 0; i < 2; i++)
-  {
-    pinMode(endStopPin[i], INPUT);
-  }
-  for (int i = 0; i < 4; i++)
-  {
-    pinMode(driverPin[i], OUTPUT);
-  }
-  //Start 1602 LCD 
-  lcd.begin();
-  lcd.backlight(); 
-  // Connect to Wi-Fi
-  lcd.print("Connecting...");
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED)
-  {
-    delay(1000);
-    Serial.println("Connecting to WiFi..");
-  }
-  // Print ESP Local IP Address
-  Serial.println(WiFi.localIP());
-  lcd.clear();
-  lcd.setCursor(0, 1);
-  lcd.print(WiFi.localIP());
-
-  // Route for root / web page (send website to chient)
-  server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send_P(200, "text/html", index_html, processor);
-  });
-
-  // when a GET request communication incoming 
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
-    String inputMessage1;
-    String inputMessage2;
-    String inputMessage3;
-    // GET input1 value on <ESP_IP>/update?output=<inputMessage1>&state=<inputMessage2>
-    if (request->hasParam(PARAM_INPUT_1) && request->hasParam(PARAM_INPUT_2))
-    {
-      inputMessage1 = request->getParam(PARAM_INPUT_1)->value();
-      inputMessage2 = request->getParam(PARAM_INPUT_2)->value();
-      remoteControl(inputMessage1.toInt(), inputMessage2.toInt());
-    }
-    else if (request->hasParam(PARAM_INPUT_3))
-    {
-      inputMessage3 = request->getParam(PARAM_INPUT_3)->value();
-      webinput = inputMessage3.toInt();
-      newInput = HIGH;
-    }
-    else
-    {
-      Serial.println("Invalid GET request");
-    }
-    request->send(200, "text/plain", "OK");
-  });
-  // Start Async webserver
-  server.begin();
-}
-/******************************Loop*******************************/
-void loop()
-{
-  buttoncontrol();
-  webcontrol();
-  checkIfAtEnd();
-}
-/*********************web control handler*************************/
-//Inefficiet but should work. Will Sort it out later
-void remoteControl(int control, int state)
-{
-  //quick and dirty if else switch :D 
-  //angular coordinate phi +
-  pinState[control] = state;
-  if (control == 0)
-  {
-    Serial2.println(0);
-  }
-  //L Axis backward
-  else if (control == 1)
-  {
-    lcd.setCursor(0, 1);
-    lcd.print("Web L Axis back");
-    //Motor forward
-    pinState[0] = state;
-    digitalWrite(driverPin[0], pinState[0]);
-    preEndStopState[0] = HIGH;
-  }
-  //L Axis forward
-  else if (control == 2)
-  {
-    lcd.setCursor(0, 1);
-    lcd.print("Web L Axis forw.");
-    pinState[1] = state;
-    digitalWrite(driverPin[1], pinState[1]);
-    preEndStopState[1] = HIGH;
-  }
-  //angular coordinate phi -
-  else if (control == 3)
-  {
-    Serial2.println(1);
-  }
-  //polar axis +
-  else if (control == 4)
-  {
-    Serial2.println(2);
-  }
-  //polar axis -
-  else if (control == 5)
-  {
-    Serial2.println(3);
-  }
-  else{
-    Serial.println("Invalid button state");
-  }
-}
-// Replaces placeholder with current button html 
-String processor(const String &var)
-{
-  //Serial.println(var);
-  if (var == "BUTTONPLACEHOLDER")
-  {
-    String buttons = "";
-    buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"0\"" + switchState(0) + "><span class=\"bbar\" name=\"^\"></span></label><br>\n";
-    buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"1\"" + switchState(1) + "><span class=\"bbar\" name=\"<\"></span></label>\n";
-    buttons += "<label class=\"block\"></label>\n";
-    buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"2\"" + switchState(2) + "><span class=\"bbar\" name=\">\"></span></label><br>\n";
-    buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"3\"" + switchState(3) + "><span class=\"bbar\" name=\"v\"></span></label>\n";
-    buttons += "</div>\n<div class=\"control-2 control\">\n";
-    buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"4\"><span class=\"bbar\" name=\"^\"></span></label>\n";
-    buttons += "<p style=\"line-height: 34px; color: rgb(255, 255, 255);\">r Axis</p>\n";
-    buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"5\"><span class=\"bbar\" name=\"v\"></span></label>";
-    return buttons;
-  }
-  return String();
-}
-//reutrn current pin state 
-String switchState(int switchPin)
-{
-  if (pinState[switchPin])
-  {
-    return "checked";
-  }
-  else
-  {
-    return "";
-  }
-}
-//Inefficiet but should work. Will Sort it out later
-/********************web control processor***********************/
-void webcontrol()
-{
-  //quick and dirty if else switch ;D 
-  if (newInput == HIGH)
-  {
-    Serial.println(webinput);
-    //grabber open
-    if (webinput == 6)
-    {
-      Serial2.println('C');
-    }
-    //grabber close
-    else if (webinput == 7)
-    {
-      Serial2.println('D');
-    }
-    //grabber turn +
-    else if (webinput == 8)
-    {
-      Serial2.println('E');
-    }
-    //grabber turn -
-    else if (webinput == 9)
-    {
-      Serial2.println('F');
-    }
-    //Homing
-    else if (webinput == 10)
-    {
-      Home();
-    }
-    else
-    {
-      Serial.println("not yet implemented");
-    }
-    //reset flag
-    newInput = LOW;
-  }
-}
-/*****************keypad control processor***********************/
-void buttoncontrol()
-{
-  //read and execute command recieved from 4x4 button pad
-  char customKey = customKeypad.getKey();
-  if (customKey)
-  {
-    //L Axis backward
-    if (customKey == '4')
-    {
-      lcd.setCursor(0, 1);
-      lcd.print("L Axis backward");
-      switchMotor(0);
-      preEndStopState[0] = HIGH;
-    }
-    //L Axis backward
-    else if (customKey == '5')
-    {
-      lcd.setCursor(0, 1);
-      lcd.print("L Axis foreward");
-      switchMotor(1);
-      preEndStopState[1] = HIGH;
-    }
-    //Homing
-    else if (customKey == '6')
-    {
-      Home();
-    }
-    //send command over serial to arduino
-    else
-    {
-      Serial2.println(customKey);
-      Serial.println(customKey);
-    }
-  }
-}
-void switchMotor(int Number)
-{
-  // toggle state of LED
-  pinState[Number] = !pinState[Number];
-  // control LED arccoding to the toggled state
-  digitalWrite(driverPin[Number], pinState[Number]);
-  Serial.println(Number);
-}
-void Home()
-{
-  lcd.clear();
-  lcd.setCursor(0, 0);
-  lcd.print("Homing...");
-  Serial2.println("2");
-  delay(2000);
-  digitalWrite(driverPin[0], HIGH);
-  while (endStopState[0] != LOW)
-  {
-    char customKey = customKeypad.getKey();
-    if (customKey)
-    {
-      //Abord Homing
-      if (customKey == '6')
-      {
-        digitalWrite(driverPin[0], LOW);
-        pinState[0] = LOW;
-        return;
-      }
-    }
-    endStopState[0] = digitalRead(endStopPin[0]);
-    delay(20);
-  }
-  // turn Motor via L298N driver off:
-  digitalWrite(driverPin[0], LOW);
-  pinState[0] = LOW;
-  Serial.println("Home X stopped");
-  Serial2.println("0");
-  for (int i = 0; i < 2400; i++)
-  {
-    char customKey = customKeypad.getKey();
-    if (customKey)
-    {
-      //Abord Homing
-      if (customKey == '6')
-      {
-        Serial2.println("0");
-        return;
-      }
-    }
-    delay(20);
-  }
-  Serial2.println("0");
-  delay(100);
-  Serial2.println("1");
-  for (int i = 0; i < 650; i++)
-  {
-    char customKey = customKeypad.getKey();
-    if (customKey)
-    {
-      //Abord Homing
-      if (customKey == '6')
-      {
-        Serial2.println("1");
-        return;
-      }
-    }
-    delay(20);
-  }
-  Serial2.println("1");
-  lcd.setCursor(0, 1);
-  lcd.print("y Axis Homed");
-}
-void checkIfAtEnd()
-{
-  //read endstop state
-  endStopState[0] = digitalRead(endStopPin[0]);
-  endStopState[1] = digitalRead(endStopPin[1]);
-  //check if end is reached, then switch off the motor. 
-  if (endStopState[0] != preEndStopState[0])
-  {
-    if (endStopState[0] == LOW)
-    {
-      // turn LED on:
-      digitalWrite(driverPin[0], LOW);
-      Serial.println("stopped0");
-      pinState[0] = LOW;
-      preEndStopState[0] = endStopState[0];
-    }
-  }
-  if (endStopState[1] != preEndStopState[1])
-  {
-    if (endStopState[1] == LOW)
-    {
-      // turn LED on:
-      digitalWrite(driverPin[1], LOW);
-      Serial.println("stopped1");
-      pinState[1] = LOW;
-      preEndStopState[1] = endStopState[1];
-    }
-  }
-}
