@@ -21,10 +21,11 @@ const byte ROWS = 4;
 const byte COLS = 4;
 //map keys to Input
 char hexaKeys[ROWS][COLS] = {
-    {'0', '1', '2', '3'},
-    {'4', '5', '6', '7'},
-    {'8', '9', 'A', 'B'},
-    {'C', 'D', 'E', 'F'}};
+  {'0', '1', '2', '3'},
+  {'4', '5', '6', '7'},
+  {'8', '9', 'A', 'B'},
+  {'C', 'D', 'E', 'F'}
+};
 //Define Keypad connection pins
 byte rowPins[ROWS] = {13, 12, 14, 27};
 byte colPins[COLS] = {26, 25, 33, 32};
@@ -60,6 +61,24 @@ int utilityState[2] = {LOW, LOW};
 int lastButtonState;    // the previous state of button
 int currentButtonState; // the current state of button
 
+/****************************** Serial communication ******************************/
+const byte maxCLength = 32;
+char serial1Recieved[maxCLength];
+char tempChars[maxCLength];        // temporary array for use when parsing
+
+// variables to hold the parsed data
+char serial1Str[maxCLength] = {0};
+char serial2Str[maxCLength] = {0};
+int integerData1 = 0;
+float floatData1 = 0.0;
+float floatData2 = 0.0;
+
+boolean serial1newData = false;
+boolean serial2newData = false;
+/******************************Tracing & Timing******************************/
+
+unsigned long StartTime = 0;
+unsigned long CurrentTime = 0;
 /******************************Website******************************/
 const char index_html[] PROGMEM = R"=="rawliteral(
 <!DOCTYPE html>
@@ -172,11 +191,15 @@ const char index_html[] PROGMEM = R"=="rawliteral(
         </div>
         <div class="Side-bar" >
             <div class="w3-panel w3-topbar w3-bottombar w3-border-green w3-pale-green">
+            <p>Connection Status</p>
+            </div>
+            <p id="connectingStatus"; style="color: white;text-align: center;">Connected</p>
+            <div class="w3-panel w3-topbar w3-bottombar w3-border-green w3-pale-green">
                 <p>Still Testing</p>
             </div >
             <p style="color: white;padding-left: 20px;text-align: left;">The CROPS Project:</p>
                 <div style="color: white; padding-left: 60px; text-align: left; line-height: 3px;">
-                <p>C omplicated</p>
+                <p>C ylindrical</p>
                 <p>R emote</p>
                 <p>O perated</p>
                 <p>P lanting</p>
@@ -221,6 +244,16 @@ const char index_html[] PROGMEM = R"=="rawliteral(
             <div class="w3-panel w3-topbar w3-bottombar w3-border-red w3-pale-red">
                 <p>Sensor & Stats</p>
               </div>
+              <p><span>Temperature</span></p>
+              <p>
+                <span id="temperature">%TEMPERATUREPLACEHOLDER%</span>
+                <sup>°C</sup>
+              </p>
+              <p><span>Humidity</span></p>
+            <p>
+                <span id="humidity">22.0</span>
+                <sup>%</sup>
+            </p>
               <div class="w3-panel w3-pale-red">
                 <p>comming soon</p>
               </div>
@@ -242,6 +275,33 @@ const char index_html[] PROGMEM = R"=="rawliteral(
     function stop() { var img = document.getElementById("stream2"); img.src = `https://i.kym-cdn.com/entries/icons/original/000/013/564/doge.jpg`; return false; }
     function streammain() { var img = document.getElementById("stream1"); img.src = `http://192.168.2.142:8080/video`; return false; }
     function stopmain() { var img = document.getElementById("stream1"); img.src = `https://i.kym-cdn.com/entries/icons/original/000/013/564/doge.jpg`; return false; }
+
+    setInterval(function () {
+        var xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                const sensorData = this.responseText.trim().split(",");
+                document.getElementById("temperature").innerHTML = sensorData[0];
+                document.getElementById("humidity").innerHTML = sensorData[1];
+                const connectionState = document.getElementById("connectingStatus").innerHTML;
+                if (connectionState == "Disconnected") {
+                    document.getElementById("connectingStatus").style.color = "white";
+                    document.getElementById("connectingStatus").innerHTML = "Connected";
+                }
+            }
+        };
+        xhttp.open("GET", "/sensorData", true);
+        xhttp.timeout = 4000; // Set timeout to 4 seconds (4000 milliseconds)
+        xhttp.ontimeout = function () {
+            const connectionState = document.getElementById("connectingStatus").innerHTML;
+            if (connectionState == "Connected") {
+            document.getElementById("connectingStatus").style.color = "red"; 
+            document.getElementById("connectingStatus").innerHTML = "Disconnected";
+            }
+        }
+        xhttp.send();
+    }, 5000);
+    
 </script>
 </html>
 )=="rawliteral";

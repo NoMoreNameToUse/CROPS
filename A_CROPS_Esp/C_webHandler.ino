@@ -15,6 +15,10 @@ String processor(const String &var)
         buttons += "<p style=\"line-height: 34px; color: rgb(255, 255, 255);\">r Axis</p>\n";
         buttons += "<label class=\"switch\"><input type=\"checkbox\" onchange=\"toggleCheckbox(this)\" id=\"5\"><span class=\"bbar\" name=\"v\"></span></label>";
         return buttons;
+        
+    }
+    else if (var == "TEMPERATUREPLACEHOLDER"){
+      return String(22);
     }
     return String();
 }

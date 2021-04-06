@@ -1,7 +1,7 @@
 /******************************Setup******************************/
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(9600); //115200
     //Serial Connection to arduino nano on bridge
     Serial2.begin(9600, SERIAL_8N1, RXD2, TXD2);
     //pinmode definition
@@ -46,7 +46,9 @@ void setup()
         request->send_P(200, "text/html", index_html, processor);
         Serial.println("Recieved new HTML request");
     });
-
+    server.on("/sensorData", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send_P(200, "text/plain", readDHTTemperature().c_str());
+    });
     // Handling incoming GET request  
     server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request) {
         String inputMessage1;
@@ -80,4 +82,5 @@ void loop()
     buttoncontrol();
     webcontrol();
     checkIfAtEnd();
+    serial1CommHandler();
 }
