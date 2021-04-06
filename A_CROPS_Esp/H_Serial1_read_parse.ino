@@ -47,7 +47,7 @@ void parseData() {
     strcpy(serial1Str, strtokIndx); // copy it to messageFromPC
     Serial.println(serial1Str);
 
-    if(strcmp (serial1Str, "DHT11") == 0){
+    if(strcmp (serial1Str, "DHT") == 0){
     strtokIndx = strtok(NULL, ","); // this continues where the previous call left off
     floatData1 = atof(strtokIndx);     // convert this part to an integer
 

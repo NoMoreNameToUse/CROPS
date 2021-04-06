@@ -4,6 +4,6 @@ void setup() {
 }
 
 void loop() {
-serial1CommHandler();
+serialCommHandler();
 serialReciever();
 }

@@ -300,7 +300,7 @@ const char index_html[] PROGMEM = R"=="rawliteral(
             }
         }
         xhttp.send();
-    }, 5000);
+    }, 10000);
     
 </script>
 </html>

@@ -2,7 +2,7 @@
 
 #define DHTPIN 2     
 
-#define DHTTYPE DHT11   // DHT 11
+#define DHTTYPE DHT22   // DHT 22
 
 DHT dht(DHTPIN, DHTTYPE);
 

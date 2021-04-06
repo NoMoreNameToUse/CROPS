@@ -1,4 +1,4 @@
-void serial1CommHandler() {
+void serialCommHandler() {
     serialReciever();
     if (serialnewData == true) {
         strcpy(tempChars, serialRecieved);
@@ -42,10 +42,10 @@ void serialReciever() {
 void parseData() {
     char * strtokIndx; // this is used by strtok() as an index
     
-    strtokIndx = strtok(tempChars,",");      // get the first part - the string
-    strcpy(serialStr, strtokIndx); // copy it to messageFromPC
-    if(strcmp (serialStr, "GETDHT11") == 0){
-      getDHT11Data();
+    strtokIndx = strtok(tempChars,",");
+    strcpy(serialStr, strtokIndx); 
+    if(strcmp (serialStr, "GETDHT") == 0){
+      getDHTData();
     }
     else if(strcmp (serialStr, "SYN") == 0){
       Serial.print("<ACK>");

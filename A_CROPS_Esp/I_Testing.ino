@@ -12,7 +12,7 @@ void errCheck()
 
 String readDHTTemperature() {
 StartTime = micros();
-Serial.println("<GETDHT11>");
+Serial.println("<GETDHT>");
 //return String(floatData1);
 String SensorData;
 SensorData += String(floatData1) + "," + String(floatData2);

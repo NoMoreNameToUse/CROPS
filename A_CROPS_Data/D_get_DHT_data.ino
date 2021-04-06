@@ -1,4 +1,4 @@
-void getDHT11Data(){
+void getDHTData(){
   
   float h = dht.readHumidity();
   // Read temperature as Celsius (the default)
@@ -18,6 +18,6 @@ void getDHT11Data(){
   float hic = dht.computeHeatIndex(t, h, false);
 
   String serialData = "";
-  serialData += "<DHT11," + String(t) + "," + String(h) + ">";
+  serialData += "<DHT," + String(t) + "," + String(h) + ">";
   Serial.print(serialData);
   }
