@@ -13,8 +13,16 @@ int servoPin[2] = {10, 11};
 int servoPos[2] = {90, 90};
 int endStopState[3];
 int preEndStopState[3] = {HIGH, HIGH, HIGH};
-int lastButtonState;    // the previous state of button
-int currentButtonState; // the current state of button
+/****************************** Servo ******************************/
 // Create servo object
 Servo Servo1;
 Servo Servo2;
+/****************************** Serial communication ******************************/
+const byte maxCLength = 32;
+char serialRecieved[maxCLength];
+char tempChars[maxCLength];        // temporary array for use when parsing
+
+// variables to hold the parsed data
+char serialStr[maxCLength] = {0};
+
+boolean serialnewData = false;
