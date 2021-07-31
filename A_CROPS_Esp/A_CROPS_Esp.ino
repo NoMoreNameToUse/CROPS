@@ -36,8 +36,8 @@ Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS)
 #define TXD2 17
 /******************************Wifi******************************/
 // WLAN login
-const char *ssid = "WLAN-339828";
-const char *password = "36938296529523707325";
+const char *ssid = "your_SSID";
+const char *password = "your_password";
 
 //Define HTTP GET update request parameter
 const char *PARAM_INPUT_1 = "output";
