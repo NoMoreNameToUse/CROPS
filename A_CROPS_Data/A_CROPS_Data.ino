@@ -100,8 +100,8 @@ bool buzzFlag[3] = {false, false, false};
 #include <WiFi.h>
 #include "time.h"
 
-const char* ssid     = "WLAN-339828";
-const char* password = "36938296529523707325";
+const char* ssid     = "your_SSID";
+const char* password = "your_password";
 
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 3600;
